@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate Grammar Challenge</title>
+    <style>
+        /* Colorful, modern background */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .app-container {
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-width: 650px;
+            width: 100%;
+        }
+
+        h1, h2 { text-align: center; color: #2d3748; }
+        p.subtitle { text-align: center; color: #718096; margin-bottom: 30px; }
+
+        /* Menu Buttons */
+        .menu-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin: 15px 0;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .menu-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .btn-inversion { background: linear-gradient(to right, #f6d365 0%, #fda085 100%); }
+        .btn-possession { background: linear-gradient(to right, #84fab0 0%, #8fd3f4 100%); color: #000; }
+        .btn-mix { background: linear-gradient(to right, #a18cd1 0%, #fbc2eb 100%); color: #000; }
+
+        /* Quiz UI */
+        .quiz-header { display: flex; justify-content: space-between; font-weight: bold; color: #4a5568; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 20px; }
+        
+        .option-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            background-color: #fff;
+            border: 2px solid #cbd5e0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            text-align: left;
+            transition: all 0.2s;
+        }
+        .option-btn:hover:not(:disabled) { background-color: #ebf4ff; border-color: #90cdf4; }
+        .option-btn:disabled { cursor: default; }
+        
+        /* Answer Highlights */
+        .correct { background-color: #c6f6d5 !important; border-color: #48bb78 !important; color: #22543d; }
+        .wrong { background-color: #fed7d7 !important; border-color: #f56565 !important; color: #742a2a; }
+        
+        #rationale-box {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #edf2f7;
+            border-left: 5px solid #4299e1;
+            border-radius: 4px;
+            display: none;
+            font-style: italic;
+        }
+
+        /* Navigation Buttons */
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .nav-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            color: white;
+            transition: background 0.2s;
+        }
+        #prev-btn { background-color: #a0aec0; }
+        #prev-btn:hover { background-color: #718096; }
+        #next-btn { background-color: #4299e1; }
+        #next-btn:hover { background-color: #3182ce; }
+        
+        /* Sections */
+        #quiz-area, #score-area { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div id="menu-area">
+        <h1>Grammar Master</h1>
+        <p class="subtitle">Select a category to test your skills.</p>
+        <button class="menu-btn btn-inversion" onclick="startQuiz('inversion')">Inversions Only</button>
+        <button class="menu-btn btn-possession" onclick="startQuiz('possession')">Possessives Only</button>
+        <button class="menu-btn btn-mix" onclick="startQuiz('mix')">Mixed Challenge</button>
+    </div>
+
+    <div id="quiz-area">
+        <div class="quiz-header">
+            <span id="quiz-title">Quiz</span>
+            <span>Question <span id="current-q-num">1</span> / <span id="total-q-num"></span></span>
+        </div>
+        <h2 id="question-text" style="text-align: left; font-size: 1.2rem;"></h2>
+        <div id="options-area"></div>
+        <div id="rationale-box"></div>
+        
+        <div class="nav-buttons">
+            <button id="prev-btn" class="nav-btn" onclick="prevQuestion()">&#8592; Previous</button>
+            <button id="next-btn" class="nav-btn" onclick="nextQuestion()">Next &#8594;</button>
+        </div>
+    </div>
+
+    <div id="score-area">
+        <h1>Quiz Complete!</h1>
+        <p class="subtitle" style="font-size: 1.2rem;">You scored <strong id="score-text">0</strong> out of <strong id="max-score"></strong>.</p>
+        <button class="menu-btn btn-mix" onclick="location.reload()">Back to Main Menu</button>
+    </div>
+</div>
+
+<script>
+    const inversionData = [
+        {
+            "question": "Never before _______ such a magnificent performance.",
+            "answerOptions": [
+                { "text": "have I seen", "rationale": "Starting a sentence with 'Never before' requires subject-auxiliary inversion.", "isCorrect": true },
+                { "text": "I have seen", "rationale": "This uses standard word order, which is incorrect after the negative adverbial 'Never before'.", "isCorrect": false },
+                { "text": "did I seen", "rationale": "When using the auxiliary 'did', the main verb must be in the base form ('see'), not the past participle.", "isCorrect": false },
+                { "text": "I saw", "rationale": "This completely lacks the required inversion.", "isCorrect": false }
+            ]
+        },
+        {
+            "question": "Rarely _______ about the consequences of their actions until it is too late.",
+            "answerOptions": [
+                { "text": "do people think", "rationale": "The negative adverb 'Rarely' at the beginning of the sentence causes the auxiliary 'do' to invert with the subject 'people'.", "isCorrect": true },
+                { "text": "people think", "rationale": "This lacks the necessary auxiliary verb and inversion.", "isCorrect": false },
+                { "text": "think people", "rationale": "Inversion in this case requires an auxiliary verb ('do'), not just swapping the main verb and subject.", "isCorrect": false },
+                { "text": "are people think", "rationale": "The auxiliary 'are' cannot be paired with the base verb 'think' in this context.", "isCorrect": false }
+            ]
+        },
+        {
+            "question": "Not only _______ the match, but they also broke a world record.",
+            "answerOptions": [
+                { "text": "did they win", "rationale": "The phrase 'Not only' at the start of a clause requires the subject and auxiliary verb to invert.", "isCorrect": true },
+                { "text": "they won", "rationale": "This option fails to invert the subject and verb.", "isCorrect": false },
+                { "text": "won they", "rationale": "Inversion in the simple past requires the auxiliary 'did', not just moving the main verb.", "isCorrect": false },
+                { "text": "have they won", "rationale": "The second clause uses the simple past ('broke'), so the first clause should match that tense with 'did they win'.", "isCorrect": false }
+            ]
+        },
+        {
+            "question": "At no time _______ that the building was unsafe.",
+            "answerOptions": [
+                { "text": "were we informed", "rationale": "The prepositional phrase 'At no time' acts as a negative adverbial, requiring the inversion of 'were' and 'we'.", "isCorrect": true },
+                { "text": "we were informed", "rationale": "This is standard word order and ignores the inversion rule.", "isCorrect": false },
+                { "text": "did we informed", "rationale": "If using 'did', the main verb must be the base form. However, this sentence requires the passive voice ('were informed').", "isCorrect": false },
+                { "text": "we informed", "rationale": "This lacks inversion and changes the meaning from passive to active.", "isCorrect": false }
+            ]
+        },
+        {
+            "question": "Hardly _______ his speech when the crowd erupted into applause.",
+            "answerOptions": [
+                { "text": "had he finished", "rationale": "'Hardly' pairs with 'when' and usually takes the past perfect tense with inversion to show one action immediately followed another.", "isCorrect": true },
+                { "text": "he had finished", "rationale": "This lacks the required inversion after 'Hardly'.", "isCorrect": false },
+                { "text": "did he finished", "rationale": "The auxiliary 'did' must be followed by a base verb ('finish'), not a past tense verb.", "isCorrect": false },
+                { "text": "has he finished", "rationale": "The second action is in the past ('erupted'), so the first action must be past perfect ('had').", "isCorrect": false }
+            ]
+        },
+        {
+            "question": "Under no circumstances _______ the red button.",
+            "answerOptions": [
+                { "text": "should you press", "rationale": "The negative phrase 'Under no circumstances' requires the modal verb 'should' to invert with the subject 'you'.", "isCorrect": true },
+                { "text": "you should press", "rationale": "This fails to apply the inversion rule.", "isCorrect": false },
+                { "text": "press you", "rationale": "This is not grammatically coherent; inversion here requires an auxiliary or modal verb.", "isCorrect": false },
+                { "text": "do you pressing", "rationale": "The auxiliary 'do' cannot be followed by an '-ing' verb form.", "isCorrect": false }
+            ]
+        },
+        {
+            "question": "Not until the rain stopped _______ to leave the shelter.",
+            "answerOptions": [
+                { "text": "were they able", "rationale": "When starting with 'Not until + [clause]', the inversion happens in the main clause, swapping 'were' and 'they'.", "isCorrect": true },
+                { "text": "they were able", "rationale": "This keeps standard word order in the main clause, which is incorrect here.", "isCorrect": false },
+                { "text": "able were they", "rationale": "The inversion must involve the auxiliary/be verb and the subject, not the adjective ('able').", "isCorrect": false },
+                { "text": "did they able", "rationale": "The word 'able' is an adjective, so it requires the verb 'to be' ('were'), not 'did'.", "isCorrect": false }
+            ]
+        },
+        {
+            "question": "Seldom _______ such dedication in a young athlete.",
+            "answerOptions": [
+                { "text": "do we see", "rationale": "The negative word 'Seldom' requires inversion with an auxiliary verb ('do').", "isCorrect": true },
+                { "text": "we see", "rationale": "This lacks the necessary auxiliary verb and inversion.", "isCorrect": false },
+                { "text": "see we", "rationale": "Inversion requires an auxiliary verb; you cannot simply swap the main verb and the subject.", "isCorrect": false },
+                { "text": "are we see", "rationale": "The auxiliary 'are' cannot be paired with the base verb 'see'.", "isCorrect": false }
+            ]
+        },
+        {
+            "question": "Only after the meeting concluded _______ the severity of the problem.",
+            "answerOptions": [
+                { "text": "did I realize", "rationale": "With 'Only after', the inversion occurs in the main clause using the auxiliary 'did'.", "isCorrect": true },
+                { "text": "I realized", "rationale": "This option fails to invert the subject and verb in the main clause.", "isCorrect": false },
+                { "text": "had I realize", "rationale": "If using 'had', the verb must be a past participle. Simple past ('did I realize') fits the sequence better.", "isCorrect": false },
+                { "text": "realized I", "rationale": "Inversion requires an auxiliary verb; swapping the main verb and subject is incorrect.", "isCorrect": false }
+            ]
+        },
+        {
+            "question": "No sooner had the alarm gone off _______ the firefighters were out the door.",
+            "answerOptions": [
+                { "text": "than", "rationale": "The comparative phrase 'No sooner' is strictly paired with the conjunction 'than'.", "isCorrect": true },
+                { "text": "when", "rationale": "'When' is used with 'Hardly' or 'Scarcely', not 'No sooner'.", "isCorrect": false },
+                { "text": "that", "rationale": "'That' cannot follow the comparative word 'sooner'.", "isCorrect": false },
+                { "text": "then", "rationale": "'Then' relates to time, but comparisons like 'sooner' require 'than'.", "isCorrect": false }
+            ]
+        },
+
+        { "question": "Seldom _____ such a beautiful sunset.", "answerOptions": [
+        { "text": "have I seen", "isCorrect": true },
+        { "text": "I have seen", "isCorrect": false },
+        { "text": "I saw", "isCorrect": false },
+        { "text": "did I see", "isCorrect": false }
+    ]},
+        { "question": "Only then _____ the truth.", "answerOptions": [
+            { "text": "did he realize", "isCorrect": true },
+            { "text": "he realized", "isCorrect": false },
+            { "text": "he did realize", "isCorrect": false },
+            { "text": "realized he", "isCorrect": false }
+        ]},
+        { "question": "Hardly _____ the door when the phone rang.", "answerOptions": [
+            { "text": "had I closed", "isCorrect": true },
+            { "text": "I had closed", "isCorrect": false },
+            { "text": "I closed", "isCorrect": false },
+            { "text": "did I close", "isCorrect": false }
+        ]},
+        { "question": "No sooner _____ than it started raining.", "answerOptions": [
+            { "text": "had we arrived", "isCorrect": true },
+            { "text": "we had arrived", "isCorrect": false },
+            { "text": "we arrived", "isCorrect": false },
+            { "text": "did we arrive", "isCorrect": false }
+        ]},
+        { "question": "Under no circumstances _____ the rules.", "answerOptions": [
+            { "text": "will we break", "isCorrect": true },
+            { "text": "we will break", "isCorrect": false },
+            { "text": "we break", "isCorrect": false },
+            { "text": "do we break", "isCorrect": false }
+        ]},
+        { "question": "Little _____ how difficult it would be.", "answerOptions": [
+            { "text": "did she know", "isCorrect": true },
+            { "text": "she knew", "isCorrect": false },
+            { "text": "she did know", "isCorrect": false },
+            { "text": "knew she", "isCorrect": false }
+        ]},
+        { "question": "Not only _____ talented, but also hardworking.", "answerOptions": [
+            { "text": "is he", "isCorrect": true },
+            { "text": "he is", "isCorrect": false },
+            { "text": "he was", "isCorrect": false },
+            { "text": "was he", "isCorrect": false }
+        ]},
+        { "question": "At no time _____ to leave early.", "answerOptions": [
+            { "text": "were we allowed", "isCorrect": true },
+            { "text": "we were allowed", "isCorrect": false },
+            { "text": "we allowed", "isCorrect": false },
+            { "text": "did we allow", "isCorrect": false }
+        ]},
+        { "question": "Scarcely _____ home when the storm hit.", "answerOptions": [
+            { "text": "had they got", "isCorrect": true },
+            { "text": "they had got", "isCorrect": false },
+            { "text": "they got", "isCorrect": false },
+            { "text": "did they get", "isCorrect": false }
+        ]},
+        { "question": "Only after the meeting _____ his mistake.", "answerOptions": [
+            { "text": "did he admit", "isCorrect": true },
+            { "text": "he admitted", "isCorrect": false },
+            { "text": "he did admit", "isCorrect": false },
+            { "text": "admitted he", "isCorrect": false }
+        ]},
+        { "question": "Never again _____ that restaurant.", "answerOptions": [
+            { "text": "will I visit", "isCorrect": true },
+            { "text": "I will visit", "isCorrect": false },
+            { "text": "I visit", "isCorrect": false },
+            { "text": "do I visit", "isCorrect": false }
+        ]},
+        { "question": "So exhausted _____ that he fell asleep immediately.", "answerOptions": [
+            { "text": "was he", "isCorrect": true },
+            { "text": "he was", "isCorrect": false },
+            { "text": "he is", "isCorrect": false },
+            { "text": "is he", "isCorrect": false }
+        ]},
+        { "question": "In no way _____ responsible for the error.", "answerOptions": [
+            { "text": "is she", "isCorrect": true },
+            { "text": "she is", "isCorrect": false },
+            { "text": "she was", "isCorrect": false },
+            { "text": "was she", "isCorrect": false }
+        ]},
+        { "question": "Only by working hard _____ success.", "answerOptions": [
+            { "text": "can you achieve", "isCorrect": true },
+            { "text": "you can achieve", "isCorrect": false },
+            { "text": "you achieve", "isCorrect": false },
+            { "text": "do you achieve", "isCorrect": false }
+        ]},
+        { "question": "Barely _____ the exam when he started celebrating.", "answerOptions": [
+            { "text": "had he passed", "isCorrect": true },
+            { "text": "he had passed", "isCorrect": false },
+            { "text": "he passed", "isCorrect": false },
+            { "text": "did he pass", "isCorrect": false }
+        ]},
+        { "question": "Not until yesterday _____ the news.", "answerOptions": [
+            { "text": "did I hear", "isCorrect": true },
+            { "text": "I heard", "isCorrect": false },
+            { "text": "I did hear", "isCorrect": false },
+            { "text": "heard I", "isCorrect": false }
+        ]},
+        { "question": "Such _____ the noise that we couldn't sleep.", "answerOptions": [
+            { "text": "was", "isCorrect": true },
+            { "text": "is", "isCorrect": false },
+            { "text": "were", "isCorrect": false },
+            { "text": "did", "isCorrect": false }
+        ]},
+        { "question": "On no account _____ touch the equipment.", "answerOptions": [
+            { "text": "should you", "isCorrect": true },
+            { "text": "you should", "isCorrect": false },
+            { "text": "you can", "isCorrect": false },
+            { "text": "do you", "isCorrect": false }
+        ]},
+        { "question": "Rarely _____ late to class.", "answerOptions": [
+            { "text": "is she", "isCorrect": true },
+            { "text": "she is", "isCorrect": false },
+            { "text": "she was", "isCorrect": false },
+            { "text": "does she", "isCorrect": false }
+        ]},
+        { "question": "Only if you practice daily _____ improve.", "answerOptions": [
+            { "text": "will you", "isCorrect": true },
+            { "text": "you will", "isCorrect": false },
+            { "text": "you can", "isCorrect": false },
+            { "text": "do you", "isCorrect": false }
+        ]}
+    ];
+
+    const possessionData = [
+        {
+            "question": "The newly elected _______ committee meets every Tuesday.",
+            "answerOptions": [
+                { "text": "women's", "rationale": "Because 'women' is an irregular plural that does not end in 's', you add an apostrophe and an 's' to show possession.", "isCorrect": true },
+                { "text": "womens'", "rationale": "The plural is 'women', so placing an apostrophe after a nonexistent 's' is incorrect.", "isCorrect": false },
+                { "text": "woman's", "rationale": "This implies a committee of only one woman, which contradicts the context.", "isCorrect": false },
+                { "text": "women", "rationale": "This lacks the necessary possessive punctuation.", "isCorrect": false }
+            ]
+        },
+        {
+            "question": "I can't seem to find my keys. Are you sure these are _______?",
+            "answerOptions": [
+                { "text": "yours", "rationale": "'Yours' is a possessive pronoun that stands alone to replace the phrase 'your keys'.", "isCorrect": true },
+                { "text": "your's", "rationale": "Possessive pronouns never take an apostrophe.", "isCorrect": false },
+                { "text": "your", "rationale": "'Your' is a determiner and must be followed directly by a noun.", "isCorrect": false },
+                { "text": "yours'", "rationale": "Possessive pronouns do not use apostrophes.", "isCorrect": false }
+            ]
+        },
+        {
+            "question": "The _______ coats were all hung neatly in the hallway.",
+            "answerOptions": [
+                { "text": "children's", "rationale": "'Children' is an irregular plural not ending in 's', so possession is shown by adding 's.", "isCorrect": true },
+                { "text": "childrens'", "rationale": "The base word is 'children', so the apostrophe cannot go after the 's'.", "isCorrect": false },
+                { "text": "child's", "rationale": "This is grammatically correct for one child, but 'coats were all' implies multiple children.", "isCorrect": false },
+                { "text": "childrens", "rationale": "This lacks the necessary possessive apostrophe.", "isCorrect": false }
+            ]
+        },
+        {
+            "question": "It's not my responsibility; you need to speak with the _______ manager.",
+            "answerOptions": [
+                { "text": "store's", "rationale": "To show that the manager belongs to the singular store, add an apostrophe and 's' to 'store'.", "isCorrect": true },
+                { "text": "stores", "rationale": "This is a simple plural and lacks possessive punctuation.", "isCorrect": false },
+                { "text": "stores'", "rationale": "This implies multiple stores, but the context ('the... manager') suggests a single store.", "isCorrect": false },
+                { "text": "store", "rationale": "While 'store manager' acts as a compound noun, 'store's manager' directly tests the possessive form.", "isCorrect": false }
+            ]
+        },
+        {
+            "question": "That brilliant idea was actually a suggestion of _______.",
+            "answerOptions": [
+                { "text": "hers", "rationale": "This is the double genitive rule; 'of' is followed by a possessive pronoun like 'hers' or 'mine'.", "isCorrect": true },
+                { "text": "her", "rationale": "'Her' is an object pronoun or determiner, but the double genitive requires a possessive pronoun here.", "isCorrect": false },
+                { "text": "she", "rationale": "This is a subject pronoun and cannot follow a preposition like 'of'.", "isCorrect": false },
+                { "text": "her's", "rationale": "Possessive pronouns never take an apostrophe.", "isCorrect": false }
+            ]
+        },
+        {
+            "question": "The two _______ cars were parked illegally blocking the driveway.",
+            "answerOptions": [
+                { "text": "bosses'", "rationale": "The plural of boss is 'bosses'. To make a regular plural ending in 's' possessive, just add an apostrophe.", "isCorrect": true },
+                { "text": "boss's", "rationale": "This is the singular possessive form, but the sentence specifies 'two'.", "isCorrect": false },
+                { "text": "bosses", "rationale": "This lacks possessive punctuation.", "isCorrect": false },
+                { "text": "bosses's", "rationale": "You do not add an extra 's' after the apostrophe for a plural word that already ends in 's'.", "isCorrect": false }
+            ]
+        },
+        {
+            "question": "We need to make sure we mind our own business and not interfere with _______.",
+            "answerOptions": [
+                { "text": "someone else's", "rationale": "For compound pronouns like 'someone else', the possessive marker goes at the very end of the phrase.", "isCorrect": true },
+                { "text": "someone's else", "rationale": "The possessive marker does not attach to the pronoun itself when 'else' is used.", "isCorrect": false },
+                { "text": "someones else's", "rationale": "This applies the possessive marker incorrectly to both words.", "isCorrect": false },
+                { "text": "someone else", "rationale": "This lacks the possessive punctuation entirely.", "isCorrect": false }
+            ]
+        },
+        {
+            "question": "The dog chased _______ tail for ten minutes before finally giving up.",
+            "answerOptions": [
+                { "text": "its", "rationale": "'Its' without an apostrophe is the correct possessive form for a singular animal or object.", "isCorrect": true },
+                { "text": "it's", "rationale": "'It's' is a contraction for 'it is' or 'it has'.", "isCorrect": false },
+                { "text": "their", "rationale": "The dog is singular, so the plural 'their' is incorrect.", "isCorrect": false },
+                { "text": "his", "rationale": "While sometimes used for pets, 'its' is the grammatically standard option for animals when gender isn't specified.", "isCorrect": false }
+            ]
+        },
+        {
+            "question": "Please submit your application by the end of _______ business day.",
+            "answerOptions": [
+                { "text": "tomorrow's", "rationale": "Time words can take possessive forms. Since 'tomorrow' is singular, we add an apostrophe and 's'.", "isCorrect": true },
+                { "text": "tomorrows", "rationale": "This is plural and lacks the possessive apostrophe.", "isCorrect": false },
+                { "text": "tomorrows'", "rationale": "This implies a plural possessive, which does not fit the context of a single upcoming day.", "isCorrect": false },
+                { "text": "tomorrow", "rationale": "While sometimes used as an adjective, standard grammar prefers the possessive form in this phrase.", "isCorrect": false }
+            ]
+        },
+        {
+            "question": "Is this laptop _______, or does it belong to the IT department?",
+            "answerOptions": [
+                { "text": "yours", "rationale": "'Yours' is a possessive pronoun standing in for 'your laptop'.", "isCorrect": true },
+                { "text": "your", "rationale": "This must be followed by a noun.", "isCorrect": false },
+                { "text": "your's", "rationale": "Possessive pronouns never use an apostrophe.", "isCorrect": false },
+                { "text": "yours'", "rationale": "Possessive pronouns do not take apostrophes.", "isCorrect": false }
+            ]
+        },
+        {"question": "_____ opinions should be respected.", "answerOptions": [
+        { "text": "Everyone's", "isCorrect": true },
+        { "text": "Everyones", "isCorrect": false },
+        { "text": "Everyones'", "isCorrect": false },
+        { "text": "Everyone", "isCorrect": false }
+        ]},
+        { "question": "This is _____ car over there.", "answerOptions": [
+            { "text": "James's", "isCorrect": true },
+            { "text": "James'", "isCorrect": false },
+            { "text": "James", "isCorrect": false },
+            { "text": "Jame's", "isCorrect": false }
+        ]},
+        { "question": "The _____ union is on strike.", "answerOptions": [
+            { "text": "teachers'", "isCorrect": true },
+            { "text": "teachers's", "isCorrect": false },
+            { "text": "teacher's", "isCorrect": false },
+            { "text": "teachers", "isCorrect": false }
+        ]},
+        { "question": "_____ house is the biggest on the street.", "answerOptions": [
+            { "text": "My parents'", "isCorrect": true },
+            { "text": "My parent's", "isCorrect": false },
+            { "text": "My parents", "isCorrect": false },
+            { "text": "My parent’s", "isCorrect": false }
+        ]},
+        { "question": "I borrowed _____ pen.", "answerOptions": [
+            { "text": "Sarah's", "isCorrect": true },
+            { "text": "Sarahs", "isCorrect": false },
+            { "text": "Sarahs'", "isCorrect": false },
+            { "text": "Sarah", "isCorrect": false }
+        ]},
+        { "question": "The _____ toys are scattered everywhere.", "answerOptions": [
+            { "text": "boys'", "isCorrect": true },
+            { "text": "boy's", "isCorrect": false },
+            { "text": "boys's", "isCorrect": false },
+            { "text": "boys", "isCorrect": false }
+        ]},
+        { "question": "_____ work is always excellent.", "answerOptions": [
+            { "text": "John's", "isCorrect": true },
+            { "text": "Johns", "isCorrect": false },
+            { "text": "Johns'", "isCorrect": false },
+            { "text": "John", "isCorrect": false }
+        ]},
+        { "question": "The _____ dresses are on sale.", "answerOptions": [
+            { "text": "women's", "isCorrect": true },
+            { "text": "womens'", "isCorrect": false },
+            { "text": "womens", "isCorrect": false },
+            { "text": "woman's", "isCorrect": false }
+        ]},
+        { "question": "_____ book is missing.", "answerOptions": [
+            { "text": "The student's", "isCorrect": true },
+            { "text": "The students'", "isCorrect": false },
+            { "text": "The students", "isCorrect": false },
+            { "text": "The student", "isCorrect": false }
+        ]},
+        { "question": "These are _____ glasses.", "answerOptions": [
+            { "text": "hers", "isCorrect": true },
+            { "text": "her's", "isCorrect": false },
+            { "text": "hers'", "isCorrect": false },
+            { "text": "her", "isCorrect": false }
+        ]},
+        { "question": "_____ shoes are dirty.", "answerOptions": [
+            { "text": "Whose", "isCorrect": true },
+            { "text": "Whos", "isCorrect": false },
+            { "text": "Whos'", "isCorrect": false },
+            { "text": "Who’s", "isCorrect": false }
+        ]},
+        { "question": "The _____ meeting starts at 9.", "answerOptions": [
+            { "text": "boss's", "isCorrect": true },
+            { "text": "boss'", "isCorrect": false },
+            { "text": "bosses'", "isCorrect": false },
+            { "text": "boss", "isCorrect": false }
+        ]},
+        { "question": "_____ flight was delayed.", "answerOptions": [
+            { "text": "The Smiths'", "isCorrect": true },
+            { "text": "The Smiths's", "isCorrect": false },
+            { "text": "The Smith's", "isCorrect": false },
+            { "text": "The Smith", "isCorrect": false }
+        ]},
+        { "question": "This belongs to _____.", "answerOptions": [
+            { "text": "them", "isCorrect": true },
+            { "text": "their's", "isCorrect": false },
+            { "text": "theirs'", "isCorrect": false },
+            { "text": "theirs's", "isCorrect": false }
+        ]},
+        { "question": "The _____ voices filled the hall.", "answerOptions": [
+            { "text": "singers'", "isCorrect": true },
+            { "text": "singer's", "isCorrect": false },
+            { "text": "singers's", "isCorrect": false },
+            { "text": "singers", "isCorrect": false }
+        ]},
+        { "question": "I found _____ wallet.", "answerOptions": [
+            { "text": "his", "isCorrect": true },
+            { "text": "his'", "isCorrect": false },
+            { "text": "him's", "isCorrect": false },
+            { "text": "he's", "isCorrect": false }
+        ]},
+        { "question": "_____ ideas changed the company.", "answerOptions": [
+            { "text": "The manager's", "isCorrect": true },
+            { "text": "The managers'", "isCorrect": false },
+            { "text": "The managers", "isCorrect": false },
+            { "text": "The manager", "isCorrect": false }
+        ]},
+        { "question": "The _____ playground is closed.", "answerOptions": [
+            { "text": "children's", "isCorrect": true },
+            { "text": "childrens'", "isCorrect": false },
+            { "text": "childrens", "isCorrect": false },
+            { "text": "childrens's", "isCorrect": false }
+        ]},
+        { "question": "_____ decision surprised everyone.", "answerOptions": [
+            { "text": "The committee's", "isCorrect": true },
+            { "text": "The committees'", "isCorrect": false },
+            { "text": "The committee", "isCorrect": false },
+            { "text": "The committees", "isCorrect": false }
+        ]}
+    ];
+
+    let activeQuiz = [];
+    let userAnswers = [];
+    let currentQuestionIndex = 0;
+
+    const menuArea = document.getElementById('menu-area');
+    const quizArea = document.getElementById('quiz-area');
+    const scoreArea = document.getElementById('score-area');
+    const questionText = document.getElementById('question-text');
+    const optionsArea = document.getElementById('options-area');
+    const rationaleBox = document.getElementById('rationale-box');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+
+    function startQuiz(type) {
+        if (type === 'inversion') {
+            activeQuiz = [...inversionData];
+            document.getElementById('quiz-title').innerText = "Inversions Quiz";
+        } else if (type === 'possession') {
+            activeQuiz = [...possessionData];
+            document.getElementById('quiz-title').innerText = "Possessives Quiz";
+        } else if (type === 'mix') {
+            activeQuiz = [...inversionData, ...possessionData].sort(() => Math.random() - 0.5);
+            document.getElementById('quiz-title').innerText = "Mixed Challenge";
+        }
+
+        userAnswers = new Array(activeQuiz.length).fill(null);
+        currentQuestionIndex = 0;
+        document.getElementById('total-q-num').innerText = activeQuiz.length;
+
+        menuArea.style.display = 'none';
+        quizArea.style.display = 'block';
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        const currentData = activeQuiz[currentQuestionIndex];
+        const previousAnswer = userAnswers[currentQuestionIndex];
+
+        document.getElementById('current-q-num').innerText = currentQuestionIndex + 1;
+        questionText.innerText = currentData.question;
+        
+        optionsArea.innerHTML = '';
+        rationaleBox.style.display = 'none';
+
+        prevBtn.style.visibility = (currentQuestionIndex === 0) ? 'hidden' : 'visible';
+        
+        if (previousAnswer === null) {
+            nextBtn.style.display = 'none';
+        } else {
+            nextBtn.style.display = 'block';
+            nextBtn.innerText = (currentQuestionIndex === activeQuiz.length - 1) ? "Finish Quiz" : "Next \u2192";
+        }
+
+        currentData.answerOptions.forEach((option, index) => {
+            const button = document.createElement('button');
+            button.innerText = option.text;
+            button.classList.add('option-btn');
+            
+            if (previousAnswer !== null) {
+                button.disabled = true;
+                if (index === previousAnswer.selectedIndex) {
+                    button.classList.add(option.isCorrect ? 'correct' : 'wrong');
+                }
+                if (option.isCorrect) {
+                    button.classList.add('correct');
+                }
+                rationaleBox.innerText = currentData.answerOptions[previousAnswer.selectedIndex].rationale;
+                rationaleBox.style.display = 'block';
+            } else {
+                button.addEventListener('click', () => handleAnswer(option, index, button, currentData.answerOptions));
+            }
+            
+            optionsArea.appendChild(button);
+        });
+    }
+
+    function handleAnswer(selectedOption, selectedIndex, selectedButton, allOptions) {
+        const buttons = optionsArea.querySelectorAll('.option-btn');
+        buttons.forEach(btn => btn.disabled = true);
+
+        userAnswers[currentQuestionIndex] = {
+            selectedIndex: selectedIndex,
+            isCorrect: selectedOption.isCorrect
+        };
+
+        if (selectedOption.isCorrect) {
+            selectedButton.classList.add('correct');
+        } else {
+            selectedButton.classList.add('wrong');
+            buttons.forEach((btn, idx) => {
+                if (allOptions[idx].isCorrect) btn.classList.add('correct');
+            });
+        }
+
+        rationaleBox.innerText = selectedOption.rationale;
+        rationaleBox.style.display = 'block';
+        nextBtn.style.display = 'block';
+        nextBtn.innerText = (currentQuestionIndex === activeQuiz.length - 1) ? "Finish Quiz" : "Next \u2192";
+    }
+
+    function prevQuestion() {
+        if (currentQuestionIndex > 0) {
+            currentQuestionIndex--;
+            loadQuestion();
+        }
+    }
+
+    function nextQuestion() {
+        if (currentQuestionIndex < activeQuiz.length - 1) {
+            currentQuestionIndex++;
+            loadQuestion();
+        } else {
+            showScoreScreen();
+        }
+    }
+
+    function showScoreScreen() {
+        let finalScore = 0;
+        userAnswers.forEach(answer => {
+            if (answer && answer.isCorrect) finalScore++;
+        });
+
+        quizArea.style.display = 'none';
+        scoreArea.style.display = 'block';
+        document.getElementById('score-text').innerText = finalScore;
+        document.getElementById('max-score').innerText = activeQuiz.length;
+    }
+</script>
+
+</body>
+</html>
